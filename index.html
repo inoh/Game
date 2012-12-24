@@ -7,24 +7,41 @@
 window.onload = function () {
   enchant();
 
-  var game = new Game(640, 320);
+  var game = new Game(320, 320);
   game.onload = function () {
     var scene = new Scene(),
-        xhr = new XMLHttpRequest();
+        xhr = new XMLHttpRequest(),
+        response = null,
+        index = 0;
+
+    var nextMemo = function () {
+      index = index === response.length - 1 ? 0 : index+1
+      var label = new Label(response[index].title);
+
+      label.addEventListener('touchstart', function () {
+        this.text = response[index].note;
+      });
+
+      if (scene.lastChild) {
+        scene.removeChild(scene.lastChild);
+      }
+      scene.addChild(label);
+    }
 
     xhr.open("GET", "http://lmt.ruby.iijgio.com/memos.json");
     xhr.send();
     xhr.onload = function () {
-      var res = JSON.parse(this.responseText);
-      for(obj in res) {
-        scene.addChild(new Label(res[obj].title));
-      }
+      response = JSON.parse(this.responseText);
       game.addEventListener('enterframe', function () {
         for(node in scene.childNodes) {
-          scene.childNodes[node].x += parseInt(node, 10) + 1.5;
-          scene.childNodes[node].y += parseInt(node, 10) + 0.5;
+          scene.lastChild.x += 2;
+          scene.lastChild.y += 2;
+          if (scene.lastChild.x >= 320 || scene.lastChild.y >= 320) {
+            nextMemo();
+          }
         }
       });
+      nextMemo();
     }
     xhr.onerror = function (e) {
       alert("error: " + this.statusText);
